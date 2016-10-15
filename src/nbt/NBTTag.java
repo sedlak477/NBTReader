@@ -1,4 +1,4 @@
-package reader;
+package nbt;
 
 
 public class NBTTag {
