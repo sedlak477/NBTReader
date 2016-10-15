@@ -25,8 +25,7 @@ public class NBTWriter {
     public static void writeToOutputStream(NBTTag nbtTag, OutputStream out) throws IllegalArgumentException, IOException {
         if (nbtTag.getType() != TagType.TagCompound)
             throw new IllegalArgumentException("Root element must be of type COMPOUND");
-        writeTagType(out, TagType.TagCompound);
-        writeCompound(out, nbtTag.getCompoundPayload());
+        writeNBTTag(out, nbtTag, true);
     }
 
     /**
@@ -50,9 +49,8 @@ public class NBTWriter {
     }
 
     private static void writeCompound(OutputStream out, NBTTag[] tag) throws IOException {
-        for (NBTTag t : tag) {
-            writeNamedNBTTag(out, t);
-        }
+        for (NBTTag t : tag)
+            writeNBTTag(out, t, true);
         writeTagType(out, TagType.TagEnd);
     }
 
@@ -130,13 +128,14 @@ public class NBTWriter {
         write(out, bb);
     }
 
-    private static void writeNamedNBTTag(OutputStream out, NBTTag tag) throws IOException {
-        writeString(out, tag.getName());
-        writeNBTTag(out, tag);
+    private static void writeNBTTag(OutputStream out, NBTTag tag) throws IOException {
+        writeNBTTag(out, tag, false);
     }
 
-    private static void writeNBTTag(OutputStream out, NBTTag tag) throws IOException {
+    private static void writeNBTTag(OutputStream out, NBTTag tag, boolean named) throws IOException {
         writeTagType(out, tag.getType());
+        if (named)
+            writeString(out, tag.isNamed()?tag.getName():"");
         switch (tag.getType()){
             case TagByte:
                 writeByte(out, tag.getBytePayload());
