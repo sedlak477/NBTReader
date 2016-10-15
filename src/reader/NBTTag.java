@@ -1,7 +1,5 @@
-package com.github.sedlak477.reader;
+package reader;
 
-
-import java.util.Arrays;
 
 public class NBTTag {
 

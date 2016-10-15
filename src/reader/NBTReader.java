@@ -1,4 +1,4 @@
-package com.github.sedlak477.reader;
+package reader;
 
 import java.io.FileInputStream;
 import java.io.IOException;

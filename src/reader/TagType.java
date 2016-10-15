@@ -1,4 +1,4 @@
-package com.github.sedlak477.reader;
+package reader;
 
 
 public enum TagType {
