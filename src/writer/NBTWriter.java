@@ -108,7 +108,10 @@ public class NBTWriter {
     }
 
     private static void writeList(OutputStream out, NBTTag[] l) throws IOException {
-        writeTagType(out, l[0].getType());
+        if (l.length>0)
+            writeTagType(out, l[0].getType());
+        else
+            writeTagType(out, TagType.TagEnd);
         writeInt(out, l.length);
         for (NBTTag t : l)
             writeNBTTag(out, t);
