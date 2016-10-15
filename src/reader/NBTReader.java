@@ -1,5 +1,9 @@
 package reader;
 
+import exception.InvalidNBTFormatException;
+import nbt.NBTTag;
+import nbt.TagType;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -11,15 +15,10 @@ import java.util.zip.GZIPInputStream;
 
 public class NBTReader {
 
-    private NBTTag root;
-
-    public NBTReader(InputStream data) throws IOException {
-        data.skip(1);
-        root = new NBTTag(TagType.TagCompound, readString(data));
-        root.setCompoundPayload(readCompound(data));
+    private NBTReader(){
     }
 
-    private NBTTag[] readCompound(InputStream in) throws InvalidNBTFormatException, IOException {
+    private static NBTTag[] readCompound(InputStream in) throws InvalidNBTFormatException, IOException {
         ArrayList<NBTTag> tags = new ArrayList<>();
         TagType type;
         while (in.available() > 0 && (type = readTagType(in)) != TagType.TagEnd) {
@@ -33,19 +32,19 @@ public class NBTReader {
         return a;
     }
 
-    private TagType readTagType(InputStream in) throws IOException {
+    private static TagType readTagType(InputStream in) throws IOException {
         return TagType.values()[readByte(in)];
     }
 
-    private byte readByte(InputStream in) throws IOException {
+    private static byte readByte(InputStream in) throws IOException {
         return (byte) in.read();
     }
 
-    private short readShort(InputStream in) throws IOException {
+    private static short readShort(InputStream in) throws IOException {
         return read(in, 2).getShort();
     }
 
-    private int readUnsignedShort(InputStream in) throws IOException {
+    private static int readUnsignedShort(InputStream in) throws IOException {
         ByteBuffer bb = ByteBuffer.allocate(4);
         bb.order(ByteOrder.BIG_ENDIAN);
         bb.put((byte)0);
@@ -55,28 +54,28 @@ public class NBTReader {
         return bb.getInt(0);
     }
 
-    private int readInt(InputStream in) throws IOException {
+    private static int readInt(InputStream in) throws IOException {
         return read(in, 4).getInt();
     }
 
-    private long readLong(InputStream in) throws IOException {
+    private static long readLong(InputStream in) throws IOException {
         return read(in, 8).getLong();
     }
 
-    private float readFloat(InputStream in) throws IOException {
+    private static float readFloat(InputStream in) throws IOException {
         return read(in, 4).getFloat();
     }
 
-    private double readDouble(InputStream in) throws IOException {
+    private static double readDouble(InputStream in) throws IOException {
         return read(in, 8).getDouble();
     }
 
-    private byte[] readByteArray(InputStream in) throws IOException {
+    private static byte[] readByteArray(InputStream in) throws IOException {
         int length = readInt(in);
         return read(in, length).array();
     }
 
-    private NBTTag[] readList(InputStream in) throws IOException {
+    private static NBTTag[] readList(InputStream in) throws IOException {
         TagType type = readTagType(in);
         int length = readInt(in);
         NBTTag[] tags = new NBTTag[length];
@@ -85,18 +84,18 @@ public class NBTReader {
         return tags;
     }
 
-    private String readString(InputStream in) throws IOException {
+    private static String readString(InputStream in) throws IOException {
         int length = readUnsignedShort(in);
         byte[] data = read(in, length).array();
         return new String(data, "UTF-8");
     }
 
-    private int[] readIntArray(InputStream in) throws IOException {
+    private static int[] readIntArray(InputStream in) throws IOException {
         int length = readInt(in);
         return read(in, length).asIntBuffer().array();
     }
 
-    private NBTTag readNBTTag(InputStream in, TagType type) throws IOException {
+    private static NBTTag readNBTTag(InputStream in, TagType type) throws IOException {
         NBTTag tag = new NBTTag(type);
         switch (type){
             case TagByte:
@@ -136,7 +135,7 @@ public class NBTReader {
         return tag;
     }
 
-    private ByteBuffer read(InputStream in, int amount) throws IOException {
+    private static ByteBuffer read(InputStream in, int amount) throws IOException {
         ByteBuffer bb = ByteBuffer.allocate(amount);
         bb.order(ByteOrder.BIG_ENDIAN);
         for (int i = 0; i < amount; i++)
@@ -145,18 +144,37 @@ public class NBTReader {
         return bb;
     }
 
-    public NBTTag getRoot() {
-        return root;
+    /**
+     * Get NBT from gzipped file
+     * @param filename
+     * @return NBT root element
+     * @throws IOException
+     */
+    public static NBTTag fromGzippedFile(String filename) throws IOException {
+        return fromInputStream(new GZIPInputStream(new FileInputStream(filename)));
     }
 
     /**
-     * Construct a NBTReader from a NBT gzipped file
+     * Get NBT from file
      * @param filename
-     * @return NBTReader
+     * @return NBT root element
      * @throws IOException
      */
-    public static NBTReader fromFile(String filename) throws IOException {
-        GZIPInputStream in = new GZIPInputStream(new FileInputStream(filename));
-        return new NBTReader(in);
+    public static NBTTag fromFile(String filename) throws IOException {
+        return fromInputStream(new FileInputStream(filename));
+    }
+
+    /**
+     * Get NBT from InputStream
+     * @param in InputStream
+     * @return NBT root element
+     * @throws IOException
+     */
+    public static NBTTag fromInputStream(InputStream in) throws IOException {
+        if (readTagType(in) != TagType.TagCompound)
+            throw new InvalidNBTFormatException("Invalid root element");
+        NBTTag root = new NBTTag(TagType.TagCompound, readString(in));
+        root.setCompoundPayload(readCompound(in));
+        return root;
     }
 }
